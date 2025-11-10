@@ -54,96 +54,124 @@
                 </p>
             </div>
             
-            <!-- Auth Status & Logout Button -->
+            <!-- Auth Status & Account Name Display -->
             <div id="auth-status-area" class="text-right">
                 <!-- Content injected by JavaScript -->
             </div>
         </header>
         
-        <!-- === MAIN APPLICATION VIEW === -->
-        <!-- The application view is hidden until Firebase Auth is ready -->
-        <div id="main-app-view" class="hidden">
-            <!-- Page Navigation -->
-            <nav class="mb-6 flex space-x-4">
-                <button id="nav-add-member" class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                    Tambah Anggota
-                </button>
-                <button id="nav-view-members" class="bg-gray-700 text-gray-300 font-medium py-2 px-4 rounded-lg transition duration-200">
-                    Lihat Daftar Anggota
-                </button>
-            </nav>
+        <!-- === MAIN APPLICATION VIEWS === -->
+        <div id="main-app-container" class="hidden">
 
-            <!-- Page 1: Add Member -->
-            <div id="add-member-view">
-                <!-- Add Member Form -->
-                <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-10">
-                    <form id="add-member-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                        <!-- Name Input -->
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Nama Anggota</label>
-                            <input type="text" id="name" name="name" required
-                                class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
-                                placeholder="Contoh: Budi Santoso">
-                        </div>
-                        <!-- Start Date Input -->
-                        <div>
-                            <label for="start-date" class="block text-sm font-medium text-gray-300 mb-1">Tanggal Mulai</label>
-                            <input type="date" id="start-date" name="start-date" required
-                                class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200">
-                        </div>
-                        <!-- Submit Button -->
-                        <button type="submit" id="submit-member-btn"
-                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 shadow-md flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-                            </svg>
-                            Tambah Anggota
-                        </button>
-                    </form>
-                </div>
+            <!-- View 0: Account Setup Screen -->
+            <div id="account-setup-view" class="max-w-xl mx-auto bg-gray-800 p-8 rounded-xl shadow-2xl mt-16">
+                <h2 class="text-2xl font-bold text-white mb-4">Pilih Nama Akun Gym Anda</h2>
+                <p class="text-gray-400 mb-6">
+                    Nama Akun ini akan digunakan untuk menyimpan dan mengelola data anggota Anda. Ini menggantikan ID Pengguna yang panjang.
+                    <strong class="text-green-400">PENTING:</strong> Siapa pun yang mengetahui Nama Akun ini dapat melihat data Anda.
+                </p>
+                <form id="account-setup-form">
+                    <label for="account-name-input" class="block text-sm font-medium text-gray-300 mb-2">Nama Akun (Contoh: EliteGymPusat)</label>
+                    <input type="text" id="account-name-input" required pattern="[A-Za-z0-9]+"
+                        class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition duration-200"
+                        placeholder="Hanya huruf dan angka">
+                    <p id="account-name-error" class="text-red-400 text-sm mt-2 hidden">Nama akun hanya boleh berisi huruf dan angka.</p>
+                    
+                    <button type="submit" id="save-account-btn"
+                        class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md">
+                        Simpan dan Lanjutkan
+                    </button>
+                </form>
             </div>
+            
+            <!-- View 1 & 2: Main Tracker Views (hidden by default) -->
+            <div id="tracker-views" class="hidden">
+                <!-- Page Navigation -->
+                <nav class="mb-6 flex space-x-4">
+                    <button id="nav-add-member" class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                        Tambah Anggota
+                    </button>
+                    <button id="nav-view-members" class="bg-gray-700 text-gray-300 font-medium py-2 px-4 rounded-lg transition duration-200">
+                        Lihat Daftar Anggota
+                    </button>
+                </nav>
 
-            <!-- Page 2: View Members List -->
-            <div id="view-members-view" class="hidden">
-                <!-- Back Button -->
-                <button id="back-to-add" class="mb-4 text-green-400 hover:text-green-300 transition flex items-center text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    Kembali ke Form
-                </button>
-
-                <!-- Loading Status Area -->
-                <div id="list-loading-spinner" class="text-center py-10 hidden">
-                    <p class="mt-2 text-gray-400">Mengambil data anggota...</p>
+                <!-- Page 1: Add Member -->
+                <div id="add-member-view">
+                    <!-- Add Member Form -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-10">
+                        <form id="add-member-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <!-- Name Input -->
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Nama Anggota</label>
+                                <input type="text" id="name" name="name" required
+                                    class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
+                                    placeholder="Contoh: Budi Santoso">
+                            </div>
+                            <!-- Start Date Input -->
+                            <div>
+                                <label for="start-date" class="block text-sm font-medium text-gray-300 mb-1">Tanggal Mulai</label>
+                                <input type="date" id="start-date" name="start-date" required
+                                    class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200">
+                            </div>
+                            <!-- Submit Button -->
+                            <button type="submit" id="submit-member-btn"
+                                class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 shadow-md flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                                </svg>
+                                Tambah Anggota
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
-                <!-- Main Content (Members List) -->
-                <main id="member-content" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                    <!-- Column: Active Members -->
-                    <section id="active-section">
-                        <h2 class="text-2xl font-semibold mb-4 border-b-2 border-green-500 pb-2 text-green-400">
-                            Anggota Aktif
-                        </h2>
-                        <div id="active-list" class="space-y-4">
-                            <!-- Active member cards will appear here -->
-                            <p id="no-active-members" class="text-gray-500 hidden">Tidak ada anggota aktif.</p>
-                        </div>
-                    </section>
+                <!-- Page 2: View Members List -->
+                <div id="view-members-view" class="hidden">
+                    <!-- Back Button -->
+                    <button id="back-to-add" class="mb-4 text-green-400 hover:text-green-300 transition flex items-center text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        Kembali ke Form
+                    </button>
 
-                    <!-- Column: Inactive Members -->
-                    <section id="inactive-section">
-                        <h2 class="text-2xl font-semibold mb-4 border-b-2 border-red-500 pb-2 text-red-500">
-                            Anggota Tidak Aktif
-                        </h2>
-                        <div id="inactive-list" class="space-y-4">
-                            <!-- Inactive member cards will appear here -->
-                            <p id="no-inactive-members" class="text-gray-500 hidden">Tidak ada anggota yang sudah tidak aktif.</p>
-                        </div>
-                    </section>
+                    <!-- Loading Status Area -->
+                    <div id="list-loading-spinner" class="text-center py-10 hidden">
+                        <svg class="animate-spin h-8 w-8 text-green-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2 text-gray-400">Mengambil data anggota...</p>
+                    </div>
 
-                </main>
+                    <!-- Main Content (Members List) -->
+                    <main id="member-content" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                        <!-- Column: Active Members -->
+                        <section id="active-section">
+                            <h2 class="text-2xl font-semibold mb-4 border-b-2 border-green-500 pb-2 text-green-400">
+                                Anggota Aktif
+                            </h2>
+                            <div id="active-list" class="space-y-4">
+                                <!-- Active member cards will appear here -->
+                                <p id="no-active-members" class="text-gray-500 hidden">Tidak ada anggota aktif.</p>
+                            </div>
+                        </section>
+
+                        <!-- Column: Inactive Members -->
+                        <section id="inactive-section">
+                            <h2 class="text-2xl font-semibold mb-4 border-b-2 border-red-500 pb-2 text-red-500">
+                                Anggota Tidak Aktif
+                            </h2>
+                            <div id="inactive-list" class="space-y-4">
+                                <!-- Inactive member cards will appear here -->
+                                <p id="no-inactive-members" class="text-gray-500 hidden">Tidak ada anggota yang sudah tidak aktif.</p>
+                            </div>
+                        </section>
+
+                    </main>
+                </div>
             </div>
         </div>
     </div>
@@ -168,11 +196,13 @@
         import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- GLOBAL FIREBASE/APP VARIABLES ---
+        const ACCOUNT_NAME_KEY = 'gymTrackerAccountName';
         let app;
         let db;
         let auth;
         let userId = null;
         let isAuthReady = false;
+        let accountName = null; // New state variable for the user-defined account name
         
         // Firestore Path Components
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -182,8 +212,17 @@
         // --- DOM Elements ---
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
-        const mainAppView = document.getElementById('main-app-view');
+        const mainAppContainer = document.getElementById('main-app-container'); // Container for all main views
         const authStatusArea = document.getElementById('auth-status-area');
+        
+        // Account Setup Elements
+        const accountSetupView = document.getElementById('account-setup-view');
+        const accountSetupForm = document.getElementById('account-setup-form');
+        const accountNameInput = document.getElementById('account-name-input');
+        const accountNameError = document.getElementById('account-name-error');
+        const trackerViews = document.getElementById('tracker-views');
+
+        // Main Tracker Elements
         const addMemberForm = document.getElementById('add-member-form');
         const nameInput = document.getElementById('name');
         const startDateInput = document.getElementById('start-date');
@@ -230,11 +269,11 @@
                     if (user) {
                         userId = user.uid;
                         console.log("User signed in with UID:", userId);
-                        showApp();
+                        checkAccountSetup(); // Proceed to account setup check
                     } else {
                         userId = null;
                         console.log("No user signed in.");
-                        showApp(false); // Can show app, but data ops will fail/be limited
+                        showApp(false); 
                     }
                     updateAuthStatusUI();
                 });
@@ -257,7 +296,6 @@
                 }
             } catch (error) {
                 console.error("Authentication Error:", error);
-                // Fallback: If custom token fails, try anonymous sign-in, or just fail gracefully.
                 try {
                     await signInAnonymously(auth);
                 } catch (anonError) {
@@ -268,48 +306,101 @@
         }
 
         /**
-         * Updates the header UI based on auth state.
+         * Checks if an account name is set and navigates to the correct view.
+         */
+        function checkAccountSetup() {
+            // Check session storage for a previously set account name
+            const storedName = sessionStorage.getItem(ACCOUNT_NAME_KEY);
+            if (storedName) {
+                accountName = storedName;
+                showApp('tracker-views'); // Show main tracker
+                showAppView('add-member-view'); // Default to Add Member view
+            } else {
+                showApp('account-setup-view'); // Show account setup screen
+            }
+            updateAuthStatusUI();
+        }
+
+
+        /**
+         * Updates the header UI based on account name state.
          */
         function updateAuthStatusUI() {
-            if (userId) {
+            if (accountName) {
                 authStatusArea.innerHTML = `
-                    <p class="text-sm text-gray-400">ID Pengguna:</p>
-                    <p class="text-lg font-medium text-white break-all">${userId}</p>
-                    <!-- Logout button is not provided as sign-in is managed by environment token -->
+                    <p class="text-sm text-gray-400">Akun Gym:</p>
+                    <p class="text-xl font-bold text-white break-all">${accountName}</p>
                 `;
+            } else if (userId) {
+                // Temporary status while setting up account name
+                authStatusArea.innerHTML = `<p class="text-sm text-yellow-400">Menyiapkan Akun...</p>`;
             } else {
                 authStatusArea.innerHTML = `<p class="text-sm text-red-500">Sesi Tidak Aktif</p>`;
             }
         }
 
         /**
-         * Shows the main application view and hides the loading overlay.
+         * Shows the main application container and hides the loading overlay.
+         * Optionally navigates to a specific view.
          */
-        function showApp() {
-            if (mainAppView) mainAppView.classList.remove('hidden');
+        function showApp(initialViewId = null) {
+            if (mainAppContainer) mainAppContainer.classList.remove('hidden');
             if (loadingOverlay) loadingOverlay.classList.add('hidden');
+            
+            // Navigate to the correct initial view
+            if (initialViewId === 'account-setup-view') {
+                if(trackerViews) trackerViews.classList.add('hidden');
+                if(accountSetupView) accountSetupView.classList.remove('hidden');
+            } else if (initialViewId === 'tracker-views') {
+                if(accountSetupView) accountSetupView.classList.add('hidden');
+                if(trackerViews) trackerViews.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Handle account name submission.
+         */
+        function handleAccountSetup(e) {
+            e.preventDefault();
+            
+            const name = accountNameInput.value.trim();
+            const validPattern = /^[A-Za-z0-9]+$/; // Only letters and numbers
+            
+            if (!validPattern.test(name)) {
+                if(accountNameError) accountNameError.classList.remove('hidden');
+                return;
+            }
+            if(accountNameError) accountNameError.classList.add('hidden');
+
+            // Save the name and transition
+            accountName = name;
+            sessionStorage.setItem(ACCOUNT_NAME_KEY, name);
+            
+            showApp('tracker-views');
+            showAppView('add-member-view');
+            updateAuthStatusUI();
         }
 
         // --- FIRESTORE DATA FUNCTIONS ---
 
         /**
-         * Get the collection reference for the current user's members.
+         * Get the collection reference for the members based on the Account Name.
          */
         function getMembersCollectionRef() {
-            if (!db || !userId) {
-                console.error("Database or User ID not available.");
+            if (!db || !userId || !accountName) {
+                console.error("Database, User ID, or Account Name not available.");
                 return null;
             }
-            // Private data path: /artifacts/{appId}/users/{userId}/members
-            const userPath = `/artifacts/${appId}/users/${userId}`;
-            return collection(db, userPath, 'members');
+            // PUBLIC data path: /artifacts/{appId}/public/data/gym_accounts/{accountName}/members
+            const accountPath = `/artifacts/${appId}/public/data/gym_accounts/${accountName.toLowerCase().replace(/[^a-z0-9]/g, '')}`; // Sanitize account name for path
+            return collection(db, accountPath, 'members');
         }
         
         /**
          * Setup real-time listener for members data.
          */
         function loadMembers() {
-            if (!isAuthReady || !userId) return; // Prevent fetching before auth is settled
+            if (!isAuthReady || !userId || !accountName) return; // Prevent fetching before auth/account is settled
 
             // If a previous listener exists, unsubscribe from it
             if (activeSnapshotUnsubscribe) {
@@ -330,7 +421,7 @@
                     id: doc.id,
                     ...doc.data()
                 }));
-                console.log(`Fetched ${members.length} members.`);
+                console.log(`Fetched ${members.length} members for account: ${accountName}`);
                 renderMembers(members);
             }, (error) => {
                 console.error("Error fetching members:", error);
@@ -345,7 +436,7 @@
             e.preventDefault();
             const submitBtn = document.getElementById('submit-member-btn');
             
-            if (!nameInput || !startDateInput || !userId) return;
+            if (!nameInput || !startDateInput || !accountName) return;
 
             const name = nameInput.value.trim();
             const startDate = startDateInput.value;
@@ -371,7 +462,7 @@
                 await addDoc(membersRef, {
                     name: name,
                     startDate: startDate,
-                    createdAt: new Date().toISOString() // Useful for sorting/tracking
+                    createdAt: new Date().toISOString()
                 });
                 
                 // Reset form and set default start date
@@ -400,7 +491,7 @@
          * Handle member deletion from Firestore.
          */
         async function handleDeleteMember() {
-            if (!currentDeleteId || !userId) return;
+            if (!currentDeleteId || !accountName) return;
 
             const membersRef = getMembersCollectionRef();
             if (!membersRef) return;
@@ -429,7 +520,7 @@
          * Handle member reactivation (sets new start date to today).
          */
         async function handleReactivateMember(memberId) {
-            if (!memberId || !userId) return;
+            if (!memberId || !accountName) return;
 
             const membersRef = getMembersCollectionRef();
             if (!membersRef) return;
@@ -461,7 +552,7 @@
          * Show the page within the application (Add or View Members)
          */
         function showAppView(viewId) {
-            if (!userId) return; // Must be authenticated
+            if (!accountName) return; // Must have an account name set
 
             // Hide all pages
             if (addMemberView) addMemberView.classList.add('hidden');
@@ -659,7 +750,7 @@
                 inactiveMembers.forEach(member => {
                     if (inactiveList) inactiveList.innerHTML += createMemberCard(member);
                 });
-                if (noInactiveMembers) noInactiveMembers.classList.add('hidden');
+                if (noInactiveMembers) noInactiveMembers.classList.remove('hidden');
             } else {
                 if (noInactiveMembers) noInactiveMembers.classList.remove('hidden');
             }
@@ -688,13 +779,19 @@
             if (loadingOverlay) loadingOverlay.classList.remove('hidden');
             setDefaultStartDate();
             initializeFirebase();
-            showAppView('add-member-view'); // Default tab to show (will wait for auth before enabling interaction)
         }
 
         // When DOM is fully loaded, initialize app
         document.addEventListener('DOMContentLoaded', initApp);
 
         // --- Event Listeners Aplikasi Utama ---
+        
+        // Listener for Account Setup Form
+        if (accountSetupForm) {
+            accountSetupForm.addEventListener('submit', handleAccountSetup);
+        }
+
+        // Listener for Add Member Form
         if (addMemberForm) {
             addMemberForm.addEventListener('submit', handleAddMember);
         }
@@ -725,9 +822,7 @@
                 reactivateButton.disabled = true;
                 reactivateButton.textContent = 'Memproses...';
                 handleReactivateMember(id).finally(() => {
-                    // Re-enabling is optional here as the whole list re-renders,
-                    // but it's good practice to ensure responsiveness.
-                    // The re-render will ultimately remove/update the card.
+                    // Re-enabling is usually handled by the re-render from onSnapshot
                 });
             }
         });
