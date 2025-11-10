@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Membership Tracker</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter font as default */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom style for date input */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+        }
+        /* Loading overlay for better UX */
+        #loading-overlay {
+            background-color: rgba(17, 24, 39, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 antialiased">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-2xl">
+            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-4 text-white font-medium" id="loading-message">Menghubungkan ke Cloud...</p>
+        </div>
+    </div>
+
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+
+        <!-- Header and Status -->
+        <header class="mb-8 flex justify-between items-center border-b border-gray-700 pb-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 mb-2">
+                    Gym Membership Tracker
+                </h1>
+                <p class="text-gray-400 text-sm">
+                    Sistem Cloud Firestore - Data tersimpan secara real-time.
+                </p>
+            </div>
+            
+            <!-- Auth Status & Logout Button -->
+            <div id="auth-status-area" class="text-right">
+                <!-- Content injected by JavaScript -->
+            </div>
+        </header>
+        
+        <!-- === MAIN APPLICATION VIEW === -->
+        <!-- The application view is hidden until Firebase Auth is ready -->
+        <div id="main-app-view" class="hidden">
+            <!-- Page Navigation -->
+            <nav class="mb-6 flex space-x-4">
+                <button id="nav-add-member" class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Tambah Anggota
+                </button>
+                <button id="nav-view-members" class="bg-gray-700 text-gray-300 font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Lihat Daftar Anggota
+                </button>
+            </nav>
+
+            <!-- Page 1: Add Member -->
+            <div id="add-member-view">
+                <!-- Add Member Form -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-10">
+                    <form id="add-member-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <!-- Name Input -->
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Nama Anggota</label>
+                            <input type="text" id="name" name="name" required
+                                class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
+                                placeholder="Contoh: Budi Santoso">
+                        </div>
+                        <!-- Start Date Input -->
+                        <div>
+                            <label for="start-date" class="block text-sm font-medium text-gray-300 mb-1">Tanggal Mulai</label>
+                            <input type="date" id="start-date" name="start-date" required
+                                class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200">
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit" id="submit-member-btn"
+                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 shadow-md flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                            </svg>
+                            Tambah Anggota
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Page 2: View Members List -->
+            <div id="view-members-view" class="hidden">
+                <!-- Back Button -->
+                <button id="back-to-add" class="mb-4 text-green-400 hover:text-green-300 transition flex items-center text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Kembali ke Form
+                </button>
+
+                <!-- Loading Status Area -->
+                <div id="list-loading-spinner" class="text-center py-10 hidden">
+                    <p class="mt-2 text-gray-400">Mengambil data anggota...</p>
+                </div>
+
+                <!-- Main Content (Members List) -->
+                <main id="member-content" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                    <!-- Column: Active Members -->
+                    <section id="active-section">
+                        <h2 class="text-2xl font-semibold mb-4 border-b-2 border-green-500 pb-2 text-green-400">
+                            Anggota Aktif
+                        </h2>
+                        <div id="active-list" class="space-y-4">
+                            <!-- Active member cards will appear here -->
+                            <p id="no-active-members" class="text-gray-500 hidden">Tidak ada anggota aktif.</p>
+                        </div>
+                    </section>
+
+                    <!-- Column: Inactive Members -->
+                    <section id="inactive-section">
+                        <h2 class="text-2xl font-semibold mb-4 border-b-2 border-red-500 pb-2 text-red-500">
+                            Anggota Tidak Aktif
+                        </h2>
+                        <div id="inactive-list" class="space-y-4">
+                            <!-- Inactive member cards will appear here -->
+                            <p id="no-inactive-members" class="text-gray-500 hidden">Tidak ada anggota yang sudah tidak aktif.</p>
+                        </div>
+                    </section>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <h3 class="text-lg font-medium text-white mb-4">Hapus Anggota?</h3>
+            <p class="text-gray-300 mb-6">Apakah Anda yakin ingin menghapus anggota <strong id="delete-member-name" class="font-bold"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-delete" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition">Batal</button>
+                <button id="confirm-delete" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDK Imports (Module Type is crucial) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- GLOBAL FIREBASE/APP VARIABLES ---
+        let app;
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+        
+        // Firestore Path Components
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // --- DOM Elements ---
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingMessage = document.getElementById('loading-message');
+        const mainAppView = document.getElementById('main-app-view');
+        const authStatusArea = document.getElementById('auth-status-area');
+        const addMemberForm = document.getElementById('add-member-form');
+        const nameInput = document.getElementById('name');
+        const startDateInput = document.getElementById('start-date');
+        const activeList = document.getElementById('active-list');
+        const inactiveList = document.getElementById('inactive-list');
+        const noActiveMembers = document.getElementById('no-active-members');
+        const noInactiveMembers = document.getElementById('no-inactive-members');
+        const navAddMember = document.getElementById('nav-add-member');
+        const navViewMembers = document.getElementById('nav-view-members');
+        const backToAddBtn = document.getElementById('back-to-add');
+        const addMemberView = document.getElementById('add-member-view');
+        const viewMembersView = document.getElementById('view-members-view');
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteMemberName = document.getElementById('delete-member-name');
+        const cancelDeleteBtn = document.getElementById('cancel-delete');
+        const confirmDeleteBtn = document.getElementById('confirm-delete');
+        const listLoadingSpinner = document.getElementById('list-loading-spinner');
+
+        let currentDeleteId = null; 
+        let activeSnapshotUnsubscribe = null; // Variable to hold the onSnapshot listener cleanup function
+
+        // --- FIREBASE INITIALIZATION & AUTH ---
+
+        /**
+         * Initialize Firebase App and Services
+         */
+        function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase configuration is missing.");
+                loadingMessage.textContent = "Gagal memuat Firebase config.";
+                return;
+            }
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // 1. Initial Sign In (Custom Token if provided, else Anonymous)
+                handleInitialSignIn();
+
+                // 2. Auth State Listener
+                onAuthStateChanged(auth, (user) => {
+                    isAuthReady = true;
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User signed in with UID:", userId);
+                        showApp();
+                    } else {
+                        userId = null;
+                        console.log("No user signed in.");
+                        showApp(false); // Can show app, but data ops will fail/be limited
+                    }
+                    updateAuthStatusUI();
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                loadingMessage.textContent = "Gagal inisialisasi Firebase.";
+            }
+        }
+
+        /**
+         * Handles the initial sign-in process using custom token or anonymously.
+         */
+        async function handleInitialSignIn() {
+            try {
+                loadingMessage.textContent = "Mengautentikasi pengguna...";
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                // Fallback: If custom token fails, try anonymous sign-in, or just fail gracefully.
+                try {
+                    await signInAnonymously(auth);
+                } catch (anonError) {
+                    console.error("Anonymous Sign-In Failed:", anonError);
+                    loadingMessage.textContent = "Otentikasi Gagal Total.";
+                }
+            }
+        }
+
+        /**
+         * Updates the header UI based on auth state.
+         */
+        function updateAuthStatusUI() {
+            if (userId) {
+                authStatusArea.innerHTML = `
+                    <p class="text-sm text-gray-400">ID Pengguna:</p>
+                    <p class="text-lg font-medium text-white break-all">${userId}</p>
+                    <!-- Logout button is not provided as sign-in is managed by environment token -->
+                `;
+            } else {
+                authStatusArea.innerHTML = `<p class="text-sm text-red-500">Sesi Tidak Aktif</p>`;
+            }
+        }
+
+        /**
+         * Shows the main application view and hides the loading overlay.
+         */
+        function showApp() {
+            if (mainAppView) mainAppView.classList.remove('hidden');
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
+        }
+
+        // --- FIRESTORE DATA FUNCTIONS ---
+
+        /**
+         * Get the collection reference for the current user's members.
+         */
+        function getMembersCollectionRef() {
+            if (!db || !userId) {
+                console.error("Database or User ID not available.");
+                return null;
+            }
+            // Private data path: /artifacts/{appId}/users/{userId}/members
+            const userPath = `/artifacts/${appId}/users/${userId}`;
+            return collection(db, userPath, 'members');
+        }
+        
+        /**
+         * Setup real-time listener for members data.
+         */
+        function loadMembers() {
+            if (!isAuthReady || !userId) return; // Prevent fetching before auth is settled
+
+            // If a previous listener exists, unsubscribe from it
+            if (activeSnapshotUnsubscribe) {
+                activeSnapshotUnsubscribe();
+            }
+
+            const membersRef = getMembersCollectionRef();
+            if (!membersRef) return;
+
+            if (listLoadingSpinner) listLoadingSpinner.classList.remove('hidden');
+
+            // Use onSnapshot for real-time updates
+            const q = query(membersRef);
+            activeSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
+                if (listLoadingSpinner) listLoadingSpinner.classList.add('hidden');
+                
+                const members = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                console.log(`Fetched ${members.length} members.`);
+                renderMembers(members);
+            }, (error) => {
+                console.error("Error fetching members:", error);
+                if (listLoadingSpinner) listLoadingSpinner.classList.add('hidden');
+            });
+        }
+
+        /**
+         * Handle adding a new member to Firestore.
+         */
+        async function handleAddMember(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submit-member-btn');
+            
+            if (!nameInput || !startDateInput || !userId) return;
+
+            const name = nameInput.value.trim();
+            const startDate = startDateInput.value;
+
+            if (!name || !startDate) {
+                // Add UI feedback
+                nameInput.classList.add('border-red-500');
+                startDateInput.classList.add('border-red-500');
+                setTimeout(() => {
+                    nameInput.classList.remove('border-red-500');
+                    startDateInput.classList.remove('border-red-500');
+                }, 2000);
+                return;
+            }
+
+            const membersRef = getMembersCollectionRef();
+            if (!membersRef) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Menyimpan...';
+
+            try {
+                await addDoc(membersRef, {
+                    name: name,
+                    startDate: startDate,
+                    createdAt: new Date().toISOString() // Useful for sorting/tracking
+                });
+                
+                // Reset form and set default start date
+                if (addMemberForm) {
+                    addMemberForm.reset();
+                    setDefaultStartDate();
+                }
+
+                // Move to the view members page after successful addition
+                showAppView('view-members-view');
+
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                    </svg>
+                    Tambah Anggota
+                `;
+            }
+        }
+
+        /**
+         * Handle member deletion from Firestore.
+         */
+        async function handleDeleteMember() {
+            if (!currentDeleteId || !userId) return;
+
+            const membersRef = getMembersCollectionRef();
+            if (!membersRef) return;
+
+            const docRef = doc(membersRef, currentDeleteId);
+            
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.textContent = 'Menghapus...';
+
+            try {
+                await deleteDoc(docRef);
+                // Deletion success, onSnapshot will handle re-render
+                if (deleteModal) {
+                    deleteModal.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+            } finally {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Hapus';
+                currentDeleteId = null;
+            }
+        }
+
+        /**
+         * Handle member reactivation (sets new start date to today).
+         */
+        async function handleReactivateMember(memberId) {
+            if (!memberId || !userId) return;
+
+            const membersRef = getMembersCollectionRef();
+            if (!membersRef) return;
+
+            const docRef = doc(membersRef, memberId);
+
+            // Get today's date in YYYY-MM-DD format
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayFormatted = `${yyyy}-${mm}-${dd}`;
+            
+            try {
+                await updateDoc(docRef, {
+                    startDate: todayFormatted,
+                    updatedAt: new Date().toISOString()
+                });
+                // Success, onSnapshot handles re-render
+            } catch (e) {
+                console.error("Error reactivating member:", e);
+            }
+        }
+
+
+        // --- FUNGSI NAVIGASI TAMPILAN & HELPER LAINNYA ---
+            
+        /**
+         * Show the page within the application (Add or View Members)
+         */
+        function showAppView(viewId) {
+            if (!userId) return; // Must be authenticated
+
+            // Hide all pages
+            if (addMemberView) addMemberView.classList.add('hidden');
+            if (viewMembersView) viewMembersView.classList.add('hidden');
+
+            // Set navigation button styles (reset to default)
+            [navAddMember, navViewMembers].forEach(btn => {
+                if (btn) {
+                    btn.classList.replace('bg-green-600', 'bg-gray-700');
+                    btn.classList.replace('text-white', 'text-gray-300');
+                }
+            });
+
+            // Show the requested page and set active button style
+            if (viewId === 'add-member-view' && addMemberView) {
+                addMemberView.classList.remove('hidden');
+                if (navAddMember) {
+                    navAddMember.classList.replace('bg-gray-700', 'bg-green-600');
+                    navAddMember.classList.replace('text-gray-300', 'text-white');
+                }
+            } else if (viewId === 'view-members-view' && viewMembersView) {
+                viewMembersView.classList.remove('hidden');
+                if (navViewMembers) {
+                    navViewMembers.classList.replace('bg-gray-700', 'bg-green-600');
+                    navViewMembers.classList.replace('text-gray-300', 'text-white');
+                }
+                // Data loading is handled by the persistent onSnapshot listener
+                if (listLoadingSpinner) listLoadingSpinner.classList.remove('hidden');
+                loadMembers();
+            }
+        }
+
+        /**
+         * Format Date object to "DD MMMM YYYY" string (example: 10 November 2025)
+         */
+        function formatFullDate(date) {
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        /**
+         * Calculate membership details (expiry date, days remaining, status)
+         */
+        function getMembershipDetails(startDateString) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of day for fair comparison
+
+            // Ensure consistent date parsing
+            const startDate = new Date(startDateString + 'T00:00:00');
+            startDate.setHours(0, 0, 0, 0);
+
+            const expiryDate = new Date(startDate);
+            expiryDate.setDate(startDate.getDate() + 30); // 30-day membership
+            expiryDate.setHours(0, 0, 0, 0);
+
+            const diffTime = expiryDate.getTime() - today.getTime();
+            // +1 because the last day is counted as active
+            let daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            let status;
+            let daysText;
+            
+            if (daysRemaining > 0) {
+                status = 'active';
+                daysText = daysRemaining === 1 ? 'Hari terakhir' : `${daysRemaining} hari tersisa`;
+            } else {
+                status = 'inactive';
+                const daysExpired = Math.abs(daysRemaining - 1);
+                daysText = daysExpired === 0 ? 'Kadaluarsa hari ini' : `Kadaluarsa ${daysExpired} hari lalu`;
+            }
+
+            // Correction for "expired today" case (still active on day 30)
+            if (status === 'inactive' && daysText === 'Kadaluarsa hari ini') {
+                status = 'active'; 
+                daysText = 'Hari terakhir';
+            } else if (status === 'inactive' && daysRemaining <= 0) {
+                const daysExpired = Math.abs(daysRemaining - 1)
+                daysText = `Kadaluarsa ${daysExpired} hari lalu`;
+            }
+
+
+            return {
+                startDate,
+                expiryDate,
+                daysRemaining,
+                daysText,
+                status
+            };
+        }
+
+        /**
+         * Set the default value of the start date input to today's date
+         */
+        function setDefaultStartDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+            if (startDateInput) {
+                startDateInput.value = formattedDate;
+            }
+        }
+        
+        /**
+         * Create HTML for one member card
+         */
+        function createMemberCard(member) {
+            const { name, startDate, id } = member;
+            const details = getMembershipDetails(startDate);
+
+            const borderColor = details.status === 'active' ? 'border-green-500' : 'border-red-500';
+            const daysColor = details.status === 'active' ? 'text-green-400' : 'text-red-400';
+
+            // Tombol "Aktifkan Kembali" hanya untuk anggota non-aktif
+            let actionButton = '';
+            if (details.status === 'inactive') {
+                actionButton = `
+                    <button data-id="${id}" class="reactivate-btn bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-3 rounded-full transition shadow-md">
+                        Aktifkan Kembali
+                    </button>
+                `;
+            }
+
+            return `
+                <div class="bg-gray-800 p-4 rounded-lg shadow-md border-l-4 ${borderColor} transition transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">${name}</h3>
+                            <p class="text-sm text-gray-400">
+                                Mulai: ${formatFullDate(details.startDate)}
+                            </p>
+                            <p class="text-sm text-gray-400">
+                                Kadaluarsa: ${formatFullDate(details.expiryDate)}
+                            </p>
+                        </div>
+                        <button data-id="${id}" data-name="${name}" class="delete-btn text-gray-500 hover:text-red-500 transition p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <p class="text-lg font-bold ${daysColor}">
+                            ${details.daysText}
+                        </p>
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Render all members into Active or Inactive lists
+         */
+        function renderMembers(members) {
+            // Reset lists
+            if (activeList) activeList.innerHTML = '';
+            if (inactiveList) inactiveList.innerHTML = '';
+
+            const activeMembers = [];
+            const inactiveMembers = [];
+
+            // Separate members by status
+            members.forEach(member => {
+                const details = getMembershipDetails(member.startDate);
+                if (details.status === 'active') {
+                    activeMembers.push({ ...member, details });
+                } else {
+                    inactiveMembers.push({ ...member, details });
+                }
+            });
+
+            // Sort active members: soonest to expire first
+            activeMembers.sort((a, b) => a.details.daysRemaining - b.details.daysRemaining);
+            
+            // Sort inactive members: most recently expired first
+            inactiveMembers.sort((a, b) => b.details.daysRemaining - a.details.daysRemaining);
+
+            // Display active members
+            if (activeMembers.length > 0) {
+                activeMembers.forEach(member => {
+                    if (activeList) activeList.innerHTML += createMemberCard(member);
+                });
+                if (noActiveMembers) noActiveMembers.classList.add('hidden');
+            } else {
+                if (noActiveMembers) noActiveMembers.classList.remove('hidden');
+            }
+
+            // Display inactive members
+            if (inactiveMembers.length > 0) {
+                inactiveMembers.forEach(member => {
+                    if (inactiveList) inactiveList.innerHTML += createMemberCard(member);
+                });
+                if (noInactiveMembers) noInactiveMembers.classList.add('hidden');
+            } else {
+                if (noInactiveMembers) noInactiveMembers.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Show the delete confirmation modal
+         */
+        function showDeleteModal(id, name) {
+            currentDeleteId = id;
+            if (deleteMemberName) {
+                deleteMemberName.textContent = name;
+            }
+            if (deleteModal) {
+                deleteModal.classList.remove('hidden');
+            }
+        }
+
+
+        // --- INICIALISASI DAN EVENT LISTENERS ---
+
+        /**
+         * Initialization function
+         */
+        function initApp() {
+            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+            setDefaultStartDate();
+            initializeFirebase();
+            showAppView('add-member-view'); // Default tab to show (will wait for auth before enabling interaction)
+        }
+
+        // When DOM is fully loaded, initialize app
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // --- Event Listeners Aplikasi Utama ---
+        if (addMemberForm) {
+            addMemberForm.addEventListener('submit', handleAddMember);
+        }
+
+        // Listener for page navigation
+        if (navAddMember) {
+            navAddMember.addEventListener('click', () => showAppView('add-member-view'));
+        }
+        if (navViewMembers) {
+            navViewMembers.addEventListener('click', () => showAppView('view-members-view'));
+        }
+        if (backToAddBtn) {
+            backToAddBtn.addEventListener('click', () => showAppView('add-member-view'));
+        }
+
+        // Listener for delete and reactivate buttons (using event delegation)
+        document.body.addEventListener('click', (e) => {
+            const deleteButton = e.target.closest('.delete-btn');
+            const reactivateButton = e.target.closest('.reactivate-btn');
+            
+            if (deleteButton) {
+                const id = deleteButton.dataset.id;
+                const name = deleteButton.dataset.name;
+                showDeleteModal(id, name);
+            } else if (reactivateButton) {
+                const id = reactivateButton.dataset.id;
+                // Disable the button temporarily to prevent double click
+                reactivateButton.disabled = true;
+                reactivateButton.textContent = 'Memproses...';
+                handleReactivateMember(id).finally(() => {
+                    // Re-enabling is optional here as the whole list re-renders,
+                    // but it's good practice to ensure responsiveness.
+                    // The re-render will ultimately remove/update the card.
+                });
+            }
+        });
+
+        // Listener for modal
+        if (cancelDeleteBtn) {
+            cancelDeleteBtn.addEventListener('click', () => {
+                if (deleteModal) deleteModal.classList.add('hidden');
+                currentDeleteId = null;
+            });
+        }
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', handleDeleteMember);
+        }
+
+    </script>
+
+</body>
+</html>
